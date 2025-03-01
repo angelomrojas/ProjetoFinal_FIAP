@@ -11,12 +11,21 @@ class NewsIn(BaseModel):
     caption: str
     theme: str
     
+class NewsGetIn(BaseModel):
+    theme:str
+    
 class InteractionsIn(BaseModel):
     userId: str
     history: str
     scrollPercentageHistory: float
     pageVisitsCountHistory: int
-    timeOnPageHistory: int
+    timeOnPageHistory: str
+    
+class UsersIn(BaseModel):
+    id: str
+    
+class InterecationsList(BaseModel):
+    Interecation: list[InteractionsIn]
     
     
 
