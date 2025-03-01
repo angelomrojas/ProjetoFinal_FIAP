@@ -10,6 +10,15 @@ class NewsIn(BaseModel):
     body: str
     caption: str
     theme: str
+    
+class InteractionsIn(BaseModel):
+    userId: str
+    history: str
+    scrollPercentageHistory: float
+    pageVisitsCountHistory: int
+    timeOnPageHistory: int
+    
+    
 
 
 

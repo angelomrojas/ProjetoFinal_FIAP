@@ -8,7 +8,7 @@ from api.database import Base
 
 app = FastAPI()
 
-app.include_router(news_router, prefix="/news", tags=['news'])
+app.include_router(news_router, prefix="", tags=['news'])
 
 @app.get("/health", status_code=200)
 async def root():

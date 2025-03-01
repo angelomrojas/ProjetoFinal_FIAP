@@ -48,8 +48,6 @@ class News(Base):
             if field=='page':
                 continue
             setattr(old_obj, field, value)
-        print(getattr(old_obj, 'page'))
-        print(getattr(old_obj, 'title'))
         await session.commit()
         return old_obj
     
@@ -107,8 +105,8 @@ class Interactions(Base):
     id = Column(Integer, primary_key=True , autoincrement=True)
     userId = Column(String(200), ForeignKey(User.id))
     history = Column(String(200), ForeignKey(News.page))
-    scrollPercentageHistory = Column(DateTime)
-    pageVisitsCountHistory = Column(DateTime)
+    scrollPercentageHistory = Column(Float)
+    pageVisitsCountHistory = Column(Integer)
     timeOnPageHistory = Column(String(200))
 
     def __repr__(self):
