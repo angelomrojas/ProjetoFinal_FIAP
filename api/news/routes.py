@@ -1,9 +1,9 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
-from sqlalchemy.future import select
+from sqlalchemy.future import select, distinct, desc, func
 
-from .schemas import NewsIn,  NewsGetIn, InteractionsIn, UsersIn, InterecationsList
+from .schemas import NewsIn,  NewsGetIn, InteractionsIn, UsersIn, InterecationsList, Recommend
 from .models import User, News, Interactions
 from ..database import SessionLocal
 import pandas as pd
@@ -73,25 +73,26 @@ async def create_user(create_user: UsersIn):
 #######################################################
 #######################################################
 
-# POST ENDPOINT.
-# @news_router.post("/interactions", response_model=int, status_code=status.HTTP_201_CREATED)
-# async def create_update_interactions(create_interactions: InterecationsList):
+#CREATE OR UPDATE ENDPOINT.
+@news_router.post("/interactions", response_model=int, status_code=status.HTTP_201_CREATED)
+async def create_update_or_create_interactions(create_interactions: InterecationsList):
     
     
-#     async with SessionLocal() as session:
-#         for ver in df_dict:
-#             print(ver['userId'])
-#             query = select(Interactions)
-#             query = query.where(Interactions.userId == ver['userId'])
-#             query = query.where(Interactions.history == ver['history'])
-#             query_ex = await session.execute(query)
-#             result = query_ex.scalar()
-#             if result is None:
-#                 interaction_to_create = User(**ver)
-#                 Interactions.create(session, interaction_to_create)
-#             else:
-#                 News.update(session, result, **ver)
-#         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Object already exists")
+    async with SessionLocal() as session:
+        novas_interactions = create_interactions.model_dump()
+        for interactions in novas_interactions['Interecation']:
+            query = select(Interactions)
+            query = query.where(Interactions.userId == interactions['userId'])
+            query = query.where(Interactions.history == interactions['history'])
+            query_ex = await session.execute(query)
+            result = query_ex.scalar()
+            if result is None:
+                interaction_to_create = Interactions(**interactions)
+                await Interactions.create(session, interaction_to_create)
+            else:
+                await Interactions.update(session, result, **interactions)
+        return 1
+    
     
 
     
@@ -101,17 +102,44 @@ async def create_user(create_user: UsersIn):
 # #######################################################
 # #######################################################
 
-# @news_router.post("/recomendacao", response_model=list[NewsIn], status_code=status.HTTP_200_OK)
-# async def recommend_object(news_update: InteractionsIn):
-#     interacoes = news_update.model_dump()
-#     df = pd.DataFrame(interacoes)
-#     new_df = df.explode(['history', 'scrollPercentageHistory', 'pageVisitsCountHistory', 'timeOnPageHistory'], ignore_index=True)
-#     print (new_df)
+@news_router.post("/recomendacao", response_model=list[NewsIn], status_code=status.HTTP_200_OK)
+async def recommend_object(recommend: Recommend):
+    async with SessionLocal() as session:
+        rec = recommend.model_dump()
+        
+        query = select(User).where(User.id_default==rec['user_id'][0])
+        result = await session.execute(query)
+        user = result.scalar()
+        
+        if user is not None:
+            query = select(distinct(News.id, News.page)).where(News.page.in_(rec["news_id"]))
+            result = await session.execute(query)
+            news = [row[0] for row in result]
+            news_default = [row[1] for row in result]
+            
+            query = select(distinct(User.id)).where(User.id_default.in_(rec["user_id"]))
+            result = await session.execute(query)
+            users = [row[0] for row in result]
+        
+            resposta = model.predict(users, news) #não esquecer o modelo
+            
+            dict(zip(news_default, resposta))
+            return list(dict(zip(news_default, resposta)))
+        else:
+            query = select(distinct(News.id, News.page)).where(News.page.in_(rec["news_id"]))
+            result = await session.execute(query)
+            news = [row[0] for row in result]
+            news_default = [row[1] for row in result]
+            
+            
+            query = (
+            select(Interactions.history, func.sum(Interactions.pageVisitsCountHistory).label("total_visits"))
+            .where(Interactions.history.in_(news_default))  # Filter specific histories
+            .group_by(Interactions.history)  # Group by history to sum visits
+            .order_by(desc("total_visits"))  # Order by total visits descending
+    )
+        
+        
+        
     
-    
-    
-#     async with SessionLocal() as session:
-#             recommend_list = ['id1', 'id2'] #aqui vai ser modelo
-#             query = select(News).filter(News.page.in_(tuple(recommend_list)))
-#             result = await session.execute(query)
-#             return result.scalars().all()
+       

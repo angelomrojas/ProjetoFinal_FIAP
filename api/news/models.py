@@ -9,8 +9,8 @@ from ..database import Base
 class News(Base):
 
     __tablename__ = "news"
-
-    page = Column(String(200), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    page = Column(String(200))
     url = Column(String(200))
     issued = Column(DateTime)
     modified = Column(DateTime)
@@ -62,6 +62,7 @@ class User(Base):
     __tablename__ = "user"
 
     id = Column(String(200), primary_key=True)
+    id_default = Column(String(200))
 
     def __repr__(self):
         return f"{self.id}"
@@ -104,13 +105,13 @@ class Interactions(Base):
 
     id = Column(Integer, primary_key=True , autoincrement=True)
     userId = Column(String(200), ForeignKey(User.id))
-    history = Column(String(200), ForeignKey(News.page))
+    history = Column(String(200), ForeignKey(News.id))
     scrollPercentageHistory = Column(Float)
     pageVisitsCountHistory = Column(Integer)
     timeOnPageHistory = Column(String(200))
 
     def __repr__(self):
-        return f"{self.id} - {self.theme}"
+        return f"{self.userId} - {self.history}"
     
     @classmethod
     async def get(cls, session, **kwargs):

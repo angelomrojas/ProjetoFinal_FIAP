@@ -28,6 +28,11 @@ class InterecationsList(BaseModel):
     Interecation: list[InteractionsIn]
     
     
+class Recommend(BaseModel):
+    user_id: list[str]
+    news_id: list[str]
+    
+    
 
 
 
