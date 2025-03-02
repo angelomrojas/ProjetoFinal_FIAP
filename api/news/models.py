@@ -10,17 +10,16 @@ class News(Base):
 
     __tablename__ = "news"
     id = Column(Integer, primary_key=True)
-    page = Column(String(200))
-    url = Column(String(200))
+    page = Column(String())
+    url = Column(String())
     issued = Column(DateTime)
     modified = Column(DateTime)
-    title = Column(String(200))
-    body = Column(String(350000))
-    caption = Column(String(320000))
-    theme = Column(String(200))
+    title = Column(String())
+    body = Column(String())
+    caption = Column(String())
 
     def __repr__(self):
-        return f"{self.title} - {self.theme}"
+        return f"{self.title}"
     
     @classmethod
     async def create(cls, session, obj_to_create):
@@ -33,14 +32,6 @@ class News(Base):
         result = await session.execute(query)
         comercio_obj = result.scalar()
         return comercio_obj
-    
-    @classmethod
-    async def get(cls, session, **kwargs):
-        query = select(cls)
-        if kwargs.get('theme') is not None:
-            query = query.where(cls.theme == kwargs.get('theme'))
-        result = await session.execute(query)
-        return result.scalars().all()
     
     @classmethod
     async def update(cls, session, old_obj, **new_obj):
@@ -61,7 +52,7 @@ class User(Base):
 
     __tablename__ = "user"
 
-    id = Column(String(200), primary_key=True)
+    id = Column(Integer, primary_key=True)
     id_default = Column(String(200))
 
     def __repr__(self):
@@ -104,8 +95,8 @@ class Interactions(Base):
     __tablename__ = "interactions"
 
     id = Column(Integer, primary_key=True , autoincrement=True)
-    userId = Column(String(200), ForeignKey(User.id))
-    history = Column(String(200), ForeignKey(News.id))
+    userId = Column(String(200), ForeignKey(User.id_default))
+    history = Column(String(200), ForeignKey(News.page))
     scrollPercentageHistory = Column(Float)
     pageVisitsCountHistory = Column(Integer)
     timeOnPageHistory = Column(String(200))

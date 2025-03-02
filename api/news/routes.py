@@ -1,12 +1,15 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
-from sqlalchemy.future import select, distinct, desc, func
+from sqlalchemy.future import select
 
 from .schemas import NewsIn,  NewsGetIn, InteractionsIn, UsersIn, InterecationsList, Recommend
 from .models import User, News, Interactions
 from ..database import SessionLocal
 import pandas as pd
+from api.prediction import load_model
+
+model = load_model()
 
 # Routes.
 news_router = APIRouter()
@@ -38,13 +41,6 @@ async def update_news_object(news_update: NewsIn):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Object not found")
             return await News.update(session, news_obj, **news_update.model_dump())
         
-        
-# GET ENDPOINT
-@news_router.get("/news", response_model=list[NewsIn], status_code=status.HTTP_200_OK)
-async def get_news_object(theme: Annotated[str | None,  Query(description="Query for theme")] = None):
-    filtros = { "theme": theme}
-    async with SessionLocal() as session:
-            return await News.get(session,**filtros)
 
 #######################################################
 #######################################################
@@ -102,42 +98,31 @@ async def create_update_or_create_interactions(create_interactions: Interecation
 # #######################################################
 # #######################################################
 
-@news_router.post("/recomendacao", response_model=list[NewsIn], status_code=status.HTTP_200_OK)
+@news_router.post("/recomendacao", status_code=status.HTTP_200_OK)
 async def recommend_object(recommend: Recommend):
     async with SessionLocal() as session:
         rec = recommend.model_dump()
         
-        query = select(User).where(User.id_default==rec['user_id'][0])
+        query = select(News.id, News.page).where(News.page.in_(rec["news_id"])).distinct()
         result = await session.execute(query)
-        user = result.scalar()
-        
-        if user is not None:
-            query = select(distinct(News.id, News.page)).where(News.page.in_(rec["news_id"]))
-            result = await session.execute(query)
-            news = [row[0] for row in result]
-            news_default = [row[1] for row in result]
+        result = list(result)
+        news = [row[0] for row in result]
+        news_default = [row[1] for row in result]
+
+        dimensão = len(news)
             
-            query = select(distinct(User.id)).where(User.id_default.in_(rec["user_id"]))
-            result = await session.execute(query)
-            users = [row[0] for row in result]
-        
-            resposta = model.predict(users, news) #não esquecer o modelo
-            
-            dict(zip(news_default, resposta))
-            return list(dict(zip(news_default, resposta)))
-        else:
-            query = select(distinct(News.id, News.page)).where(News.page.in_(rec["news_id"]))
-            result = await session.execute(query)
-            news = [row[0] for row in result]
-            news_default = [row[1] for row in result]
-            
-            
-            query = (
-            select(Interactions.history, func.sum(Interactions.pageVisitsCountHistory).label("total_visits"))
-            .where(Interactions.history.in_(news_default))  # Filter specific histories
-            .group_by(Interactions.history)  # Group by history to sum visits
-            .order_by(desc("total_visits"))  # Order by total visits descending
-    )
+        query = select(User.id).where(User.id_default.in_(rec["user_id"])).distinct()
+        result = await session.execute(query)
+        users = [row[0] for row in result]
+        users = users*dimensão
+           
+           
+        resposta = model.predict(users, news)
+        lista_resposta = [int(i) for i in resposta[0]]
+        return dict(zip(news_default, lista_resposta))
+
+
+    
         
         
         
