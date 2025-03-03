@@ -1,5 +1,6 @@
 # python libs
 import asyncio
+import zipfile
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
@@ -10,8 +11,8 @@ from api.config import settings
 from api.database import Base
 
 
-
-
+with zipfile.ZipFile('train.zip', 'r') as zip_ref:
+    zip_ref.extractall()
 
 async def create_tables(engine):
     async with engine.begin() as conn:
