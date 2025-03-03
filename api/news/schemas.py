@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import date, datetime, time, timedelta
 
 class NewsIn(BaseModel):
+    id: int
     page: str
     url: str
     issued: datetime
@@ -9,10 +10,6 @@ class NewsIn(BaseModel):
     title: str
     body: str
     caption: str
-    theme: str
-    
-class NewsGetIn(BaseModel):
-    theme:str
     
 class InteractionsIn(BaseModel):
     userId: str
@@ -22,7 +19,8 @@ class InteractionsIn(BaseModel):
     timeOnPageHistory: str
     
 class UsersIn(BaseModel):
-    id: str
+    id: int
+    id_default: str
     
 class InterecationsList(BaseModel):
     Interecation: list[InteractionsIn]

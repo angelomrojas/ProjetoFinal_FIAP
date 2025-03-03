@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
 from sqlalchemy.future import select
 
-from .schemas import NewsIn,  NewsGetIn, InteractionsIn, UsersIn, InterecationsList, Recommend
+from .schemas import NewsIn, InteractionsIn, UsersIn, InterecationsList, Recommend
 from .models import User, News, Interactions
 from ..database import SessionLocal
 import pandas as pd
